@@ -7,19 +7,11 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #e5ddd5; display: flex; flex-direction: column; height: 100vh; }
-        
-        /* Шапка чата */
         .header { background: #075e54; color: white; padding: 15px; text-align: center; font-size: 18px; font-weight: bold; }
-        
-        /* Окно сообщений */
         .chat-container { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
-        
-        /* Стили бабблов */
         .message { max-width: 75%; padding: 10px 15px; border-radius: 10px; font-size: 16px; line-height: 1.4; word-wrap: break-word; }
         .user { background: #dcf8c6; align-self: flex-end; border-top-right-radius: 0; }
         .ai { background: white; align-self: flex-start; border-top-left-radius: 0; }
-        
-        /* Нижняя панель ввода */
         .input-panel { background: #f0f0f0; padding: 10px; display: flex; gap: 10px; align-items: center; }
         input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; outline: none; }
         button { background: #128c7e; color: white; border: none; padding: 12px 20px; border-radius: 20px; font-size: 16px; cursor: pointer; font-weight: bold; }
@@ -31,7 +23,7 @@
     <div class="header">ИИ Собеседник</div>
     
     <div class="chat-container" id="chatContainer">
-        <div class="message ai">Привет! Я твой будущий ИИ-ассистент. Напиши мне что-нибудь!</div>
+        <div class="message ai">Привет! Я твой облачный ИИ-ассистент. Напиши мне что-нибудь!</div>
     </div>
     
     <div class="input-panel">
@@ -48,7 +40,7 @@
             msgDiv.classList.add('message', sender);
             msgDiv.innerText = text;
             chatContainer.appendChild(msgDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight; // Скролл вниз
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
 
         function handleKeyPress(event) {
@@ -61,24 +53,21 @@
             const text = userInput.value.trim();
             if (!text) return;
 
-            // 1. Отображаем сообщение пользователя
             appendMessage(text, 'user');
             userInput.value = '';
 
             try {
-                // 2. Отправляем запрос на Python бэкенд
-                const response = await fetch('/ask', {
+                // ОТПРАВЛЯЕМ ЗАПРОС НА ВНЕШНИЙ СЕРВЕР RENDER
+                const response = await fetch('https://my-unique-ai-chat.onrender.com/ask', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: text })
                 });
                 
                 const data = await response.json();
-                
-                // 3. Отображаем ответ ИИ
                 appendMessage(data.response, 'ai');
             } catch (error) {
-                appendMessage('Ошибка связи с сервером.', 'ai');
+                appendMessage('Ошибка связи с облачным сервером.', 'ai');
                 console.error(error);
             }
         }
