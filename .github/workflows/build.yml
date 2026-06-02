@@ -14,31 +14,33 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Install dependencies
+    - name: Install System Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y libsqlite3-dev lld libffi-dev aidl
         pip install --upgrade pip
         pip install buildozer cython virtualenv
 
+    - name: Set up Java and Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        cmdline-tools-version: 8512546 # Стабильная версия инструментов
+
+    - name: Pre-install Android Build Tools
+      run: |
+        # Принудительно ставим build-tools и платформу через официальный sdkmanager
+        sdkmanager "build-tools;33.0.0" "platforms;android-33"
+        
+        # Создаем структуру папок, которую ожидает увидеть Buildozer, 
+        # и связываем её с преднастроенным Android SDK
+        mkdir -p $HOME/.buildozer/android/platform
+        ln -s $ANDROID_HOME $HOME/.buildozer/android/platform/android-sdk
+
     - name: Build with Buildozer
       run: |
-        # Запускаем сборку. Она создаст нужные папки SDK.
-        buildozer android debug || true
-        
-        # Хак: исправляем путь к aidl, если Buildozer его не нашел
-        if [ -d "$HOME/.buildozer/android/platform/android-sdk/build-tools" ]; then
-          cd $HOME/.buildozer/android/platform/android-sdk/build-tools
-          VERSION_DIR=$(ls -1 | head -n 1)
-          if [ -n "$VERSION_DIR" ] && [ ! -f "$VERSION_DIR/aidl" ]; then
-            echo "Linking aidl for version $VERSION_DIR"
-            ln -s /usr/bin/aidl ./$VERSION_DIR/aidl || true
-          fi
-        fi
-        
-        # Запускаем сборку повторно, теперь она пройдет проверку инструментов
+        # Запускаем сборку. Теперь все инструменты уже на месте.
         buildozer android debug
-
+        
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
