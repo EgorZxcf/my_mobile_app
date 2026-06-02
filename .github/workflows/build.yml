@@ -21,21 +21,34 @@ jobs:
         pip install --upgrade pip
         pip install buildozer cython virtualenv
 
-    # Используем JDK 17, так как предустановленный на GitHub Android SDK требует именно её
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
 
+    - name: Fix Sdkmanager Path for Buildozer
+      run: |
+        # Базовый путь к SDK на GitHub Actions
+        ANDROID_HOME=/usr/local/lib/android/sdk
+        
+        # Создаем старую структуру папок, которую так отчаянно ищет Buildozer
+        mkdir -p $ANDROID_HOME/tools/bin
+        
+        # Создаем фейковый скрипт sdkmanager, который внутри себя вызывает современный cmdline-tools
+        echo '#!/bin/bash' > $ANDROID_HOME/tools/bin/sdkmanager
+        echo '/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "$@"' >> $ANDROID_HOME/tools/bin/sdkmanager
+        
+        # Делаем наш скрипт-заглушку исполняемым
+        chmod +x $ANDROID_HOME/tools/bin/sdkmanager
+        
+        echo "Fake sdkmanager successfully created at $ANDROID_HOME/tools/bin/sdkmanager"
+
     - name: Build with Buildozer
       run: |
-        # Явно указываем пути к Android SDK и NDK для окружения Ubuntu
         export ANDROID_HOME=/usr/local/lib/android/sdk
         export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/27.3.13750724
-        
-        # Добавляем нужные утилиты в PATH
-        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+        export PATH=$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$PATH
         
         # Запускаем сборку
         buildozer android debug
