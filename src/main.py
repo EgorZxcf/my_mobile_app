@@ -1,25 +1,23 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
+from flask_cors import CORS  # Нужен, чтобы мобильное приложение могло делать запросы к серверу
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
-# Загружаем переменные окружения из файла .env
 load_dotenv()
 
-app = Flask(__name__, 
-            template_folder='www', 
-            static_folder='www', 
-            static_url_path='')
+app = Flask(__name__)
+CORS(app)  # Разрешаем запросы со всех устройств (включая твой телефон)
 
-# НАСТРОЙКА ПОД OPENROUTER
 ai_client = OpenAI(
     api_key=os.getenv("AI_API_KEY"),
     base_url="https://openrouter.ai/api/v1"
 )
 
+# Проверочный маршрут, чтобы убедиться, что сервер на Render работает
 @app.route('/')
-def index():
-    return render_template('index.html')
+def home():
+    return "AI Chat Backend is running on Render!"
 
 @app.route('/ask', methods=['POST'])
 def ask():
@@ -30,33 +28,25 @@ def ask():
         return jsonify({'response': 'Сообщение не может быть пустым.'}), 400
 
     try:
-        # Запрос к OpenRouter
         chat_completion = ai_client.chat.completions.create(
             extra_headers={
-                "HTTP-Referer": "http://localhost:8080",
-                "X-Title": "AI Chat App",
+                "HTTP-Referer": "https://render.com",
+                "X-Title": "AI Mobile Chat",
             },
             messages=[
-                {
-                    "role": "system",
-                    "content": "Ты полезный и вежливый ИИ-ассистент в мобильном приложении. Отвечай кратко и дружелюбно на языке пользователя."
-                },
-                {
-                    "role": "user",
-                    "content": user_message,
-                }
+                {"role": "system", "content": "Ты полезный ИИ-ассистент в мобильном приложении."},
+                {"role": "user", "content": user_message}
             ],
-            # Используем универсальный роутер OpenRouter, который сам подберет доступную модель, 
-            # либо можешь попробовать конкретную актуальную "google/gemma-2-9b-it:free"
             model="openrouter/auto", 
         )
         ai_response = chat_completion.choices[0].message.content
         
     except Exception as e:
         print(f"Ошибка API: {e}")
-        ai_response = f"Извини, возникла ошибка при запросе к OpenRouter. Ошибка: {e}"
+        ai_response = f"Ошибка сервера: {e}"
 
     return jsonify({'response': ai_response})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    # Локальный запуск для тестов
+    app.run(host='0.0.0.0', port=8080)
