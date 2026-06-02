@@ -17,34 +17,26 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsqlite3-dev lld libffi-dev SDKMANAGER
+        sudo apt-get install -y libsqlite3-dev lld libffi-dev aidl
         pip install --upgrade pip
         pip install buildozer cython virtualenv
 
-    - name: Fix Aidl Missing Error
-      run: |
-        # Предварительно создаем папку для SDK, чтобы заставить ее принять нужные компоненты
-        mkdir -p ~/.buildozer/android/platform/android-sdk/build-tools/
-        # Мы принудительно говорим системе установить более стабильную версию build-tools, где aidl точно на месте
-        # Либо, если Buildozer скачает свою, этот скрипт сделает исправление перед финальным шагом.
-
     - name: Build with Buildozer
       run: |
-        # Запускаем сборку. Если она упадет на загрузке SDK, мы сделаем принудительный линк
+        # Запускаем сборку. Она создаст нужные папки SDK.
         buildozer android debug || true
         
-        # Хак: находим, куда установился aidl, и копируем его туда, где его ищет билд-скрипт
+        # Хак: исправляем путь к aidl, если Buildozer его не нашел
         if [ -d "$HOME/.buildozer/android/platform/android-sdk/build-tools" ]; then
           cd $HOME/.buildozer/android/platform/android-sdk/build-tools
           VERSION_DIR=$(ls -1 | head -n 1)
           if [ -n "$VERSION_DIR" ] && [ ! -f "$VERSION_DIR/aidl" ]; then
-            echo "Fixing aidl link for version $VERSION_DIR"
-            sudo apt-get install -y aidl
+            echo "Linking aidl for version $VERSION_DIR"
             ln -s /usr/bin/aidl ./$VERSION_DIR/aidl || true
           fi
         fi
         
-        # Перезапускаем сборку на чистую, теперь она пройдет этот шаг
+        # Запускаем сборку повторно, теперь она пройдет проверку инструментов
         buildozer android debug
 
     - name: Upload APK Artifact
