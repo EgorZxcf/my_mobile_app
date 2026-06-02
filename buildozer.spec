@@ -17,7 +17,8 @@ version = 0.1
 
 # Какие библиотеки нужны для работы приложения (requirements)
 # Нам пока нужен только python3
-requirements = python3
+requirements = python3, flask, openai, python-dotenv, requests, urllib3
+
 
 # Ориентация экрана (portrait, landscape или all)
 orientation = portrait
