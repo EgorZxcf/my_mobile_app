@@ -27,36 +27,38 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android SDK Build Tools and Fix Aidl
+    - name: Setup Android SDK Build Tools and Patches
       run: |
-        # Базовый путь к SDK на GitHub Actions
+        # Базовый путь к системному SDK на GitHub Actions
         ANDROID_HOME=/usr/local/lib/android/sdk
         
-        # Обновляем sdkmanager и принудительно ставим build-tools версии 33.0.2 (под наш android.api = 33)
+        # Принимаем лицензии и ставим нужные компоненты в систему
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
         $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33"
 
-        # Настраиваем фейковый путь tools/bin для старых проверок Buildozer
-        mkdir -p $ANDROID_HOME/tools/bin
-        echo '#!/bin/bash' > $ANDROID_HOME/tools/bin/sdkmanager
-        echo '/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "$@"' >> $ANDROID_HOME/tools/bin/sdkmanager
-        chmod +x $ANDROID_HOME/tools/bin/sdkmanager
+        # Создаем именно ту структуру папок, которую Buildozer проверяет локально
+        mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
+        
+        # Создаем скрипт-заглушку sdkmanager прямо внутри локальной папки Buildozer
+        echo '#!/bin/bash' > /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+        echo '/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "$@"' >> /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+        
+        # Делаем скрипт исполняемым
+        chmod +x /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
 
-        # Создаем папку, в которой Buildozer ищет build-tools внутри своего локального окружения,
-        # и делаем символическую ссылку на системный SDK, чтобы он сразу всё нашёл
-        mkdir -p /home/runner/.buildozer/android/platform/android-sdk
+        # Делаем символические ссылки на build-tools и platforms, чтобы Buildozer не качал их заново
         ln -s $ANDROID_HOME/build-tools /home/runner/.buildozer/android/platform/android-sdk/build-tools
         ln -s $ANDROID_HOME/platforms /home/runner/.buildozer/android/platform/android-sdk/platforms
 
-        echo "Android SDK Environment successfully configured."
+        echo "Patched sdkmanager injected directly into Buildozer's directory tree."
 
     - name: Build with Buildozer
       run: |
         export ANDROID_HOME=/usr/local/lib/android/sdk
         export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/27.3.13750724
-        export PATH=$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.2:$PATH
+        export PATH=/home/runner/.buildozer/android/platform/android-sdk/tools/bin:$ANDROID_HOME/platform-tools:$PATH
         
-        # Запускаем сборку
+        # Запускаем сборку APK
         buildozer android debug
         
     - name: Upload APK Artifact
