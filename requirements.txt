@@ -1,7 +1,5 @@
-flask
-openai
-python-dotenv
-gunicorn
-requests
-urllib3
-flask-cors
+fastapi==0.110.0
+uvicorn==0.28.0
+requests==2.31.0
+aiogram==3.4.1
+aiohttp==3.9.3

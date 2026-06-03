@@ -1,52 +1,38 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS  # Нужен, чтобы мобильное приложение могло делать запросы к серверу
-from openai import OpenAI
 import os
-from dotenv import load_dotenv
+import sys
 
-load_dotenv()
+# Пример базового сервера (если у тебя FastAPI/Flask)
+# Если у тебя другой фреймворк, этот блок инициализации адаптируется,
+# но главное — блок запуска в самом низу файла!
 
-app = Flask(__name__)
-CORS(app)  # Разрешаем запросы со всех устройств (включая твой телефон)
-
-ai_client = OpenAI(
-    api_key=os.getenv("AI_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
-)
-
-# Проверочный маршрут, чтобы убедиться, что сервер на Render работает
-@app.route('/')
-def home():
-    return "AI Chat Backend is running on Render!"
-
-@app.route('/ask', methods=['POST'])
-def ask():
-    data = request.get_json()
-    user_message = data.get('message', '')
+try:
+    from fastapi import FastAPI
+    import uvicorn
+    app = FastAPI()
     
-    if not user_message:
-        return jsonify({'response': 'Сообщение не может быть пустым.'}), 400
-
-    try:
-        chat_completion = ai_client.chat.completions.create(
-            extra_headers={
-                "HTTP-Referer": "https://render.com",
-                "X-Title": "AI Mobile Chat",
-            },
-            messages=[
-                {"role": "system", "content": "Ты полезный ИИ-ассистент в мобильном приложении."},
-                {"role": "user", "content": user_message}
-            ],
-            model="openrouter/auto", 
-        )
-        ai_response = chat_completion.choices[0].message.content
+    @app.get("/")
+    def read_root():
+        return {"status": "working", "message": "AI Chat Backend is running!"}
         
-    except Exception as e:
-        print(f"Ошибка API: {e}")
-        ai_response = f"Ошибка сервера: {e}"
+    @app.post("/chat")
+    def chat_endpoint(data: dict):
+        # Логика твоего ИИ-чата
+        return {"response": "Привет! Я твой ИИ-ассистент."}
+except ImportError:
+    # Если это простой скрипт на Flask или бот
+    app = None
 
-    return jsonify({'response': ai_response})
-
-if __name__ == '__main__':
-    # Локальный запуск для тестов
-    app.run(host='0.0.0.0', port=8080)
+if __name__ == "__main__":
+    print("Запуск сервера...")
+    # Render передает порт в переменную окружения PORT. 
+    # Если ее нет (запуск на телефоне), используем 8000 по умолчанию.
+    port = int(os.environ.get("PORT", 8000))
+    
+    # Если используем uvicorn (FastAPI)
+    if 'uvicorn' in sys.modules and app:
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    else:
+        # Резервный вариант, если это другой скрипт
+        print(sys.argv)
+        # Если у тебя здесь был свой специфичный запуск бота/сервера, 
+        # убедись, что он слушает host 0.0.0.0 и динамический port
