@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android APK with Action
 on: [push, pull_request]
 
 jobs:
@@ -9,58 +9,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    # Используем готовый проверенный контейнер, где уже есть ВСЁ:
+    # и правильный sdkmanager, и NDK, и aidl. Нам больше не нужно настраивать пути вручную!
+    - name: Buildozer Action
+      uses: ArtemSBulgakov/buildozer-action@v1.2.3
       with:
-        python-version: '3.10'
+        workdir: .
+        buildozer_version: master
 
-    - name: Install System Dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libsqlite3-dev lld libffi-dev aidl autoconf automake libtool pkg-config
-        pip install --upgrade pip
-        pip install buildozer cython virtualenv
-
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-
-    - name: Setup Android SDK Build Tools and Patches
-      run: |
-        # Базовый путь к системному SDK на GitHub Actions
-        ANDROID_HOME=/usr/local/lib/android/sdk
-        
-        # Принимаем лицензии и ставим нужные компоненты в систему
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33"
-
-        # Создаем именно ту структуру папок, которую Buildozer проверяет локально
-        mkdir -p /home/runner/.buildozer/android/platform/android-sdk/tools/bin
-        
-        # Создаем скрипт-заглушку sdkmanager прямо внутри локальной папки Buildozer
-        echo '#!/bin/bash' > /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-        echo '/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "$@"' >> /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-        
-        # Делаем скрипт исполняемым
-        chmod +x /home/runner/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-
-        # Делаем символические ссылки на build-tools и platforms, чтобы Buildozer не качал их заново
-        ln -s $ANDROID_HOME/build-tools /home/runner/.buildozer/android/platform/android-sdk/build-tools
-        ln -s $ANDROID_HOME/platforms /home/runner/.buildozer/android/platform/android-sdk/platforms
-
-        echo "Patched sdkmanager injected directly into Buildozer's directory tree."
-
-    - name: Build with Buildozer
-      run: |
-        export ANDROID_HOME=/usr/local/lib/android/sdk
-        export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/27.3.13750724
-        export PATH=/home/runner/.buildozer/android/platform/android-sdk/tools/bin:$ANDROID_HOME/platform-tools:$PATH
-        
-        # Запускаем сборку APK
-        buildozer android debug
-        
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
