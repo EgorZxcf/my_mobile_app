@@ -28,3 +28,6 @@ android.archs = armeabi-v7a, arm64-v8a
 android.allow_backup = True
 android.sdk_path = /usr/local/lib/android/sdk
 android.ndk_path = /usr/local/lib/android/sdk/ndk/27.3.13750724
+
+# (list) Permissions
+android.permissions = INTERNET
