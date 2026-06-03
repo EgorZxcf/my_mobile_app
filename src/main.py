@@ -1,38 +1,32 @@
 import os
 import sys
 
-# Пример базового сервера (если у тебя FastAPI/Flask)
-# Если у тебя другой фреймворк, этот блок инициализации адаптируется,
-# но главное — блок запуска в самом низу файла!
-
+# Проверяем наличие необходимых библиотек
 try:
     from fastapi import FastAPI
     import uvicorn
-    app = FastAPI()
     
+    app = FastAPI()
+
     @app.get("/")
     def read_root():
-        return {"status": "working", "message": "AI Chat Backend is running!"}
-        
+        return {"status": "working", "message": "AI Chat Backend is running successfully!"}
+
     @app.post("/chat")
     def chat_endpoint(data: dict):
-        # Логика твоего ИИ-чата
-        return {"response": "Привет! Я твой ИИ-ассистент."}
-except ImportError:
-    # Если это простой скрипт на Flask или бот
-    app = None
+        user_message = data.get("message", "")
+        # Здесь будет логика обработки сообщения твоим ИИ
+        return {"response": f"Получил твое сообщение: '{user_message}'. Сервер работает!"}
+
+except ImportError as e:
+    print(f"Критическая ошибка импорта: {e}")
+    print("Убедитесь, что все зависимости указаны в requirements.txt")
+    sys.exit(1)
 
 if __name__ == "__main__":
-    print("Запуск сервера...")
-    # Render передает порт в переменную окружения PORT. 
-    # Если ее нет (запуск на телефоне), используем 8000 по умолчанию.
+    print("Инициализация запуска сервера на Render...")
+    # Получаем порт от Render
     port = int(os.environ.get("PORT", 8000))
     
-    # Если используем uvicorn (FastAPI)
-    if 'uvicorn' in sys.modules and app:
-        uvicorn.run(app, host="0.0.0.0", port=port)
-    else:
-        # Резервный вариант, если это другой скрипт
-        print(sys.argv)
-        # Если у тебя здесь был свой специфичный запуск бота/сервера, 
-        # убедись, что он слушает host 0.0.0.0 и динамический port
+    # Запускаем сервер прямо из python-скрипта
+    uvicorn.run(app, host="0.0.0.0", port=port)
