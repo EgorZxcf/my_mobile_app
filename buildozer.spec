@@ -1,33 +1,32 @@
 [app]
-# Название твоего приложения в меню телефона
-title = My Mobile App
+title = AI Chat
+package.name = aichat
+package.domain = org.test
 
-# Имя пакета (уникальный ID для Play Market, только латиница и точки)
-package.name = my_mobile_app
-package.domain = org.example
+# Ссылка на исходный код
+source.dir = .
+source.include_exts = py,png,jpg,kv,atlas
 
-# Папка, где лежит исходный код (мы создавали src)
-source.dir = src
-
-# Какие расширения файлов включать в сборку
-source.include_exts = py,html,js,css,png,jpg
-
-# Версия приложения
+# Версии компонентов (Стабильный стек для Android)
 version = 0.1
+requirements = python3,kivy==2.3.0,kivymd==1.2.0,requests,urllib3,certifi
 
-# Какие библиотеки нужны для работы приложения (requirements)
-# Нам пока нужен только python3
-requirements = python3, kivy
-
-# Ориентация экрана (portrait, landscape или all)
+# Настройки экрана
 orientation = portrait
-
-# (Раздел для Android)
 fullscreen = 0
-android.archs = armeabi-v7a, arm64-v8a
-android.allow_backup = True
-android.sdk_path = /usr/local/lib/android/sdk
-android.ndk_path = /usr/local/lib/android/sdk/ndk/27.3.13750724
 
-# (list) Permissions
+# Разрешения и системные настройки
 android.permissions = INTERNET
+android.api = 33
+android.minapi = 21
+android.ndk_api = 21
+
+# Архитектуры процессоров (ВАЖНО: arm64-v8a обязателен для новых Android)
+android.archs = arm64-v8a, armeabi-v7a
+
+# Включаем логирование ошибок p4a
+android.logcat_filters = *:S python:D
+
+[buildozer]
+log_level = 2
+warn_on_root = 1
