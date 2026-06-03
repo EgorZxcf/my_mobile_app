@@ -9,10 +9,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Используем готовый проверенный контейнер, где уже есть ВСЁ:
-    # и правильный sdkmanager, и NDK, и aidl. Нам больше не нужно настраивать пути вручную!
+    # Заменили жесткую версию v1.2.3 на автоматическую v1
     - name: Buildozer Action
-      uses: ArtemSBulgakov/buildozer-action@v1.2.3
+      uses: ArtemSBulgakov/buildozer-action@v1
       with:
         workdir: .
         buildozer_version: master
