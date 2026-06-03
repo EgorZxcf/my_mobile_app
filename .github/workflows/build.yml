@@ -1,4 +1,4 @@
-name: Build Android APK with Action
+name: Build Android APK
 on: [push, pull_request]
 
 jobs:
@@ -9,13 +9,35 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Заменили жесткую версию v1.2.3 на автоматическую v1
-    - name: Buildozer Action
-      uses: ArtemSBulgakov/buildozer-action@v1
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
-        workdir: .
-        buildozer_version: master
+        python-version: '3.10'
 
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Install All Buildozer Dependencies
+      run: |
+        sudo apt-get update
+        # Устанавливаем полный пакет системных библиотек, необходимых для компиляции Python под Android
+        sudo apt-get install -y build-essential git ffmpeg libsdl2-dev libsdl2-image-dev \
+        libsdl2-mixer-dev libsdl2-ttf-dev libportmidi-dev libswscale-dev libavformat-dev \
+        libavcodec-dev zlib1g-dev libgstreamer1.0-dev gstreamer1.0-plugins-base \
+        gstreamer1.0-plugins-good libsqlite3-dev sqlite3 libffi-dev libssl-dev unzip zip libtinfo5
+        
+        pip install --upgrade pip
+        pip install buildozer cython virtualenv
+
+    - name: Build with Buildozer
+      run: |
+        # ВНИМАНИЕ: Мы убрали все export ANDROID_HOME!
+        # Теперь Buildozer сам в автоматическом режиме скачает нужный SDK, NDK и разложит aidl.
+        buildozer android debug
+        
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
