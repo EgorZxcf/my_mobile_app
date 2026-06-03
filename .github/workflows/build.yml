@@ -27,28 +27,34 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Fix Sdkmanager Path for Buildozer
+    - name: Setup Android SDK Build Tools and Fix Aidl
       run: |
         # Базовый путь к SDK на GitHub Actions
         ANDROID_HOME=/usr/local/lib/android/sdk
         
-        # Создаем старую структуру папок, которую так отчаянно ищет Buildozer
+        # Обновляем sdkmanager и принудительно ставим build-tools версии 33.0.2 (под наш android.api = 33)
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33"
+
+        # Настраиваем фейковый путь tools/bin для старых проверок Buildozer
         mkdir -p $ANDROID_HOME/tools/bin
-        
-        # Создаем фейковый скрипт sdkmanager, который внутри себя вызывает современный cmdline-tools
         echo '#!/bin/bash' > $ANDROID_HOME/tools/bin/sdkmanager
         echo '/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "$@"' >> $ANDROID_HOME/tools/bin/sdkmanager
-        
-        # Делаем наш скрипт-заглушку исполняемым
         chmod +x $ANDROID_HOME/tools/bin/sdkmanager
-        
-        echo "Fake sdkmanager successfully created at $ANDROID_HOME/tools/bin/sdkmanager"
+
+        # Создаем папку, в которой Buildozer ищет build-tools внутри своего локального окружения,
+        # и делаем символическую ссылку на системный SDK, чтобы он сразу всё нашёл
+        mkdir -p /home/runner/.buildozer/android/platform/android-sdk
+        ln -s $ANDROID_HOME/build-tools /home/runner/.buildozer/android/platform/android-sdk/build-tools
+        ln -s $ANDROID_HOME/platforms /home/runner/.buildozer/android/platform/android-sdk/platforms
+
+        echo "Android SDK Environment successfully configured."
 
     - name: Build with Buildozer
       run: |
         export ANDROID_HOME=/usr/local/lib/android/sdk
         export ANDROID_NDK_HOME=/usr/local/lib/android/sdk/ndk/27.3.13750724
-        export PATH=$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$PATH
+        export PATH=$ANDROID_HOME/tools/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/build-tools/33.0.2:$PATH
         
         # Запускаем сборку
         buildozer android debug
