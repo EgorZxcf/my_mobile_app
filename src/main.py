@@ -1,7 +1,7 @@
 import os
 import sys
 
-# Проверяем наличие необходимых библиотек
+# Пробуем импортировать FastAPI и Uvicorn
 try:
     from fastapi import FastAPI
     import uvicorn
@@ -15,18 +15,16 @@ try:
     @app.post("/chat")
     def chat_endpoint(data: dict):
         user_message = data.get("message", "")
-        # Здесь будет логика обработки сообщения твоим ИИ
-        return {"response": f"Получил твое сообщение: '{user_message}'. Сервер работает!"}
+        return {"response": f"Сервер онлайн! Получено сообщение: {user_message}"}
 
 except ImportError as e:
-    print(f"Критическая ошибка импорта: {e}")
-    print("Убедитесь, что все зависимости указаны в requirements.txt")
+    print(f"Ошибка импорта зависимостей: {e}")
     sys.exit(1)
 
 if __name__ == "__main__":
-    print("Инициализация запуска сервера на Render...")
-    # Получаем порт от Render
+    # Render всегда передает порт в переменную окружения PORT
     port = int(os.environ.get("PORT", 8000))
+    print(col := f"Старт сервера на порту {port}...")
     
-    # Запускаем сервер прямо из python-скрипта
+    # Запускаем uvicorn напрямую через python-код
     uvicorn.run(app, host="0.0.0.0", port=port)
